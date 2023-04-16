@@ -1,5 +1,5 @@
 % predicate (c):
-% Succeeds if the maximum number of assignments of any ta is less than or equal 'Max'
+% max_slots_per_day/2 succeeds if no TA is assigned more than 'Max' labs in 'DaySched'
 % [1, 2, 3, 4, 4, 2, 2] --> msort --> [1, 2, 2, 2, 3, 4, 4]
 % clumped --> [1-1, 2-3, 4-2] --> extract_numbers --> [1, 3, 2]
 % max_list --> 3
@@ -26,8 +26,9 @@ extract_numbers([_-Num|T], Counts) :-
 
 
 % Predicate (d):
-% Succeeds if 'Assignment' is a possible assignemnt for the TAs in a given slot 
-% Works by generating all possible subsets of the TAs list
+% slot_assignment/4 succeeds if Assignment is a possible assignment to a single
+% slot with 'LabsNum' labs and 'RemTAs' is the list of modified TAs after the assignment
+% Works by generating all possible subsequences of the TAs list
 
 slot_assignment(0, X, X, []).
 
@@ -48,8 +49,8 @@ slot_assignment(LabsNum, TAs, RemTAs, Assignment) :-
 
 	
 % Predicate (e):
-% Succeeds 'RemTAs' is the updated 'TAs' after assigning the TA with name 'Name' a new slot
-% The load of the chosen TA is decremented
+% ta_slot_assignment/3 succeeds if RemTAs is the list of TA structures resulting
+% from updating the load of TA Name in TAs.
 
 ta_slot_assignment([], [], _).
 
