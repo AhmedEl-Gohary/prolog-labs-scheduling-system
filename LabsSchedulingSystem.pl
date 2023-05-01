@@ -1,56 +1,46 @@
-% predicate (c):
-% max_slots_per_day/2 succeeds if no TA is assigned more than 'Max' labs in 'DaySched'
-% [1, 2, 3, 4, 4, 2, 2] --> msort --> [1, 2, 2, 2, 3, 4, 4]
-% clumped --> [1-1, 2-3, 4-2] --> extract_numbers --> [1, 3, 2]
-% max_list --> 3
+week_schedule([], _, _,[]).
+week_schedule([H|T],TAs,DayMax,[H1|T1]):-
+	day_schedule(H,TAs,RemTAs,H1),
+	max_slots_per_day(H1,DayMax),
+	week_schedule(T,RemTAs,DayMax,T1).
 
-max_slots_per_day(DaySched, Max) :-
-	flatten(DaySched, FlatSched),
-	max_occurence(FlatSched, MaxOccurence),
-	MaxOccurence =< Max.
+day_schedule([],X,X,[]).
+day_schedule([H|T],TAs,RemTAs,[H1|T1]):-
+	slot_assignment(H,TAs,TAs1,H1),
+	day_schedule(T,TAs1,RemTAs,T1).
 
-max_occurence(List, Max) :-
-	frequency_count(List, Count),
-	extract_numbers(Count, Nums),
-	max_list(Nums, Max).
+max_slots_per_day(DaySched,Max):-
+	flatten(DaySched,L),
+	\+ setof(X,(member(Y,L),count(Y,L,X),X > Max),_).
 	
-frequency_count(List, Count) :-
-    msort(List, Sorted),
-    clumped(Sorted, Count).
+count(Name,L,S):-
+	count(Name,L,0,S).
+count(_,[] ,S,S):-!.
+count(L,[L|T],Acc,S):-
+	Acc1 is Acc +1 ,
+	count(L,T,Acc1 ,S).
+count(L ,[H|T],Acc ,S):-
+	L \= H ,
+	count(L,T,Acc,S).
 
-extract_numbers([], []).
-
-extract_numbers([_-Num|T], Counts) :-
-	extract_numbers(T, PreviousCounts),
-	Counts = [Num|PreviousCounts].
-
-
-% Predicate (d):
-% slot_assignment/4 succeeds if Assignment is a possible assignment to a single
-% slot with 'LabsNum' labs and 'RemTAs' is the list of modified TAs after the assignment
-% Works by generating all possible subsequences of the TAs list
-
-slot_assignment(0, X, X, []).
-
-slot_assignment(LabsNum, TAs, RemTAs, Assignment) :-
-	TAs = [ta(Name, Load)|T],
-	LabsNum > 0, Load > 0,
-	NewLabsNum is LabsNum - 1,
-	NewLoad is Load - 1,
-
-	((slot_assignment(NewLabsNum, T, PreviousRemTAs, PreviousAssignment), 
-	  RemTAs = [ta(Name, NewLoad)|PreviousRemTAs], 
-	  Assignment = [Name|PreviousAssignment]);
-
-	 (slot_assignment(LabsNum, T, PreviousRemTAs, Assignment),
-	  RemTAs = [ta(Name, Load)|PreviousRemTAs])).
-
-
-
+slot_assignment_helper(0,X,X,[]).
+slot_assignment_helper(X,[ta(N,L)|T],R,A):-
+	X > 0 ,
+	L > 0 ,
+	X1 is X -1 ,
+	L1 is L -1 ,
+	((slot_assignment_helper(X1,T,T1,T2),A=[N|T2],R=[ta(N,L1)|T1] )
+	; slot_assignment_helper(X,T,T1,A) , R=[ta(N,L)|T1]).
 	
-% Predicate (e):
-% ta_slot_assignment/3 succeeds if RemTAs is the list of TA structures resulting
-% from updating the load of TA Name in TAs.
+slot_assignment_helper(X,[ta(N,L)|T],[ta(N,L)|T1],A):-
+	X > 0 ,
+	L =< 0 ,
+	slot_assignment_helper(X,T,T1,A).
+	
+slot_assignment(LabsNum,TAs,RemTAs,A):-
+	permutation(TAs,TAS) ,
+	setof((L1,L2),slot_assignment_helper(LabsNum,TAS,L1,L2),List) ,
+	member((RemTAs,A),List).
 
 ta_slot_assignment([], [], _).
 
@@ -60,5 +50,3 @@ ta_slot_assignment(TAs, RemTAs, Name) :-
 	((TAName = Name, Load > 0, NewLoad is Load - 1);
 	(TAName \= Name, NewLoad is Load)),
 	RemTAs = [ta(TAName, NewLoad)|PreviousRemTAs].
-
-
