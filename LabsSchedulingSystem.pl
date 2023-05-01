@@ -29,8 +29,9 @@ slot_assignment_helper(X,[ta(N,L)|T],R,A):-
 	L > 0 ,
 	X1 is X -1 ,
 	L1 is L -1 ,
-	((slot_assignment_helper(X1,T,T1,T2),A=[N|T2],R=[ta(N,L1)|T1] )
-	; slot_assignment_helper(X,T,T1,A) , R=[ta(N,L)|T1]).
+	((slot_assignment_helper(X1,T,T1,T2),A1=[N|T2],R=[ta(N,L1)|T1] )
+	; slot_assignment_helper(X,T,T1,A) , R=[ta(N,L)|T1]),
+	permutation(A1, A).
 	
 slot_assignment_helper(X,[ta(N,L)|T],[ta(N,L)|T1],A):-
 	X > 0 ,
@@ -38,8 +39,7 @@ slot_assignment_helper(X,[ta(N,L)|T],[ta(N,L)|T1],A):-
 	slot_assignment_helper(X,T,T1,A).
 	
 slot_assignment(LabsNum,TAs,RemTAs,A):-
-	permutation(TAs,TAS) ,
-	setof((L1,L2),slot_assignment_helper(LabsNum,TAS,L1,L2),List) ,
+	setof((L1,L2),slot_assignment_helper(LabsNum,TAs,L1,L2),List) ,
 	member((RemTAs,A),List).
 
 ta_slot_assignment([], [], _).
